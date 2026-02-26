@@ -35,6 +35,26 @@ def sample_sdtm_datasets() -> dict:
 
 
 @pytest.fixture
+def sample_sdtm_dataset() -> dict:
+    """Sample SDTM dataset response with 20 variables, _links, and ordinal."""
+    return {
+        "_links": {"self": {"href": "/mdr/sdtm/3-4/datasets/DM"}},
+        "name": "DM",
+        "label": "Demographics",
+        "ordinal": 1,
+        "variables": [
+            {
+                "_links": {"self": {"href": f"/mdr/sdtm/3-4/datasets/DM/variables/VAR{i}"}},
+                "name": f"VAR{i}",
+                "label": f"Variable {i}",
+                "ordinal": i,
+            }
+            for i in range(20)
+        ],
+    }
+
+
+@pytest.fixture
 def sample_codelist() -> dict:
     """Sample codelist with 150 terms to test truncation."""
     return {
