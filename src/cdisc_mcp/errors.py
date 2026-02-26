@@ -14,7 +14,10 @@ class RateLimitError(CDISCClientError):
 
     def __init__(self, retry_after: int | None = None) -> None:
         self.retry_after = retry_after
-        msg = f"Rate limit exceeded. Retry after {retry_after}s." if retry_after else "Rate limit exceeded."
+        if retry_after:
+            msg = f"Rate limit exceeded. Retry after {retry_after}s."
+        else:
+            msg = "Rate limit exceeded."
         super().__init__(msg)
 
 

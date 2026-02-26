@@ -19,7 +19,7 @@ dependencies = [
 [project.scripts]
 cdisc-mcp = "cdisc_mcp.server:main"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
