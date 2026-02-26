@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for src/cdisc_mcp/client.py
 
@@ -7,7 +6,6 @@ Uses pytest-httpx to intercept all outbound HTTP without a live server.
 """
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Fixtures local to this module

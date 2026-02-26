@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Integration tests for CDISCClient + response_formatter pipeline.
 
@@ -8,7 +7,6 @@ by pytest-httpx.
 """
 
 import pytest
-
 
 BASE_URL = "https://library.cdisc.org/api/cosmos/v2"
 

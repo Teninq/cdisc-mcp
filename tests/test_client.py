@@ -1,8 +1,9 @@
 """Tests for CDISCClient HTTP client."""
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 import pytest
-import httpx
 from pytest_httpx import HTTPXMock
+
 from cdisc_mcp.client import CDISCClient
 from cdisc_mcp.config import Config
 from cdisc_mcp.errors import AuthenticationError, RateLimitError, ResourceNotFoundError

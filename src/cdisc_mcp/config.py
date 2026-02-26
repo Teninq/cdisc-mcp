@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Application configuration loaded from environment variables."""
 
 import os
@@ -68,7 +67,7 @@ def get_api_key() -> str:
     """
     api_key = os.getenv("CDISC_API_KEY", "").strip()
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "CDISC_API_KEY environment variable is required. "
             "Set it to your CDISC Library personal API key."
         )

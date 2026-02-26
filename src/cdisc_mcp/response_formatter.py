@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for trimming and normalising CDISC API responses.
 
 The CDISC Library API returns HAL-flavoured JSON with hypermedia link blocks

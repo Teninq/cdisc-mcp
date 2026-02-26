@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Async HTTP client for the CDISC Library REST API.
 
 Handles connection pooling, response caching with asyncio.Lock protection,

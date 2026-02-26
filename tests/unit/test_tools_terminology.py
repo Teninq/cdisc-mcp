@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for src/cdisc_mcp/tools/terminology.py
 
@@ -9,6 +8,7 @@ Coverage target: 90%+
 """
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 

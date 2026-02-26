@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for src/cdisc_mcp/response_formatter.py
 
@@ -7,7 +6,6 @@ All tests are pure Python — no HTTP, no environment variables required.
 Coverage target: 95%+ (pure transformation logic)
 """
 
-import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -96,8 +94,8 @@ class TestListTruncation:
     """Large arrays are truncated to MAX_LIST_LENGTH with a truncation notice."""
 
     def test_short_list_is_not_truncated(self):
-        from cdisc_mcp.response_formatter import format_response
         from cdisc_mcp import config
+        from cdisc_mcp.response_formatter import format_response
 
         short = [{"id": i} for i in range(config.MAX_LIST_LENGTH - 1)]
         payload = {"items": short}
@@ -106,8 +104,8 @@ class TestListTruncation:
         assert len(result["items"]) == len(short)
 
     def test_exact_boundary_list_is_not_truncated(self):
-        from cdisc_mcp.response_formatter import format_response
         from cdisc_mcp import config
+        from cdisc_mcp.response_formatter import format_response
 
         exact = [{"id": i} for i in range(config.MAX_LIST_LENGTH)]
         payload = {"items": exact}
@@ -150,8 +148,7 @@ class TestListTruncation:
 
     def test_codelist_terms_truncated(self, sample_codelist):
         """sample_codelist has 150 terms — must be truncated to DEFAULT_MAX_ITEMS."""
-        from cdisc_mcp.response_formatter import format_response
-        from cdisc_mcp.response_formatter import DEFAULT_MAX_ITEMS
+        from cdisc_mcp.response_formatter import DEFAULT_MAX_ITEMS, format_response
 
         result = format_response(sample_codelist)
 

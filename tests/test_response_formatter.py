@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for response formatter - spec compliance tests."""
 from typing import Any
-import pytest
-from cdisc_mcp.response_formatter import format_response, DEFAULT_MAX_ITEMS
+
+from cdisc_mcp.response_formatter import DEFAULT_MAX_ITEMS, format_response
 
 
 def test_default_max_items_is_100() -> None:

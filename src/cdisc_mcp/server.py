@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """FastMCP server entry point for the CDISC Library MCP service.
 
 All MCP tools are registered here with dependency injection of the
@@ -9,14 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastmcp import FastMCP
 
 from .client import CDISCClient
 from .config import load_config
-from .tools import adam, cdash, search, sdtm, terminology
+from .tools import adam, cdash, sdtm, search, terminology
 
 logger = logging.getLogger(__name__)
 

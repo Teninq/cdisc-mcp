@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unit tests for src/cdisc_mcp/server.py
 
 Tests the server factory function create_server() and verifies that all
@@ -6,6 +5,7 @@ Tests the server factory function create_server() and verifies that all
 """
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 
@@ -22,6 +22,7 @@ class TestCreateServer:
 
     def test_returns_fastmcp_instance(self, mock_client):
         from fastmcp import FastMCP
+
         from cdisc_mcp.server import create_server
 
         server = create_server(mock_client)
@@ -79,7 +80,7 @@ class TestServerToolCallsClient:
         server = create_server(mock_client)
 
         tools = server._tool_manager._tools
-        result = await tools["list_products"].fn()
+        await tools["list_products"].fn()
 
         mock_client.get.assert_called_once_with("/mdr/products")
 

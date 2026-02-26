@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for src/cdisc_mcp/tools/sdtm.py
 
@@ -9,8 +8,8 @@ Coverage target: 90%+
 """
 
 from unittest.mock import AsyncMock, MagicMock
-import pytest
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Shared mock client setup

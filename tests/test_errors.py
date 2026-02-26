@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unit tests for src/cdisc_mcp/errors.py"""
 
 import pytest

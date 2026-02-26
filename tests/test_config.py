@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for configuration loading."""
 import pytest
-from cdisc_mcp.config import load_config, Config
+
+from cdisc_mcp.config import load_config
 
 
 class TestLoadConfig:
