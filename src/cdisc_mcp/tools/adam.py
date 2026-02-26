@@ -6,6 +6,7 @@ from typing import Any
 
 from ..client import CDISCClient
 from ..response_formatter import format_response
+from ._validators import validate_version
 
 
 async def get_adam_datastructures(client: CDISCClient, version: str) -> dict[str, Any]:
@@ -14,6 +15,7 @@ async def get_adam_datastructures(client: CDISCClient, version: str) -> dict[str
     Args:
         version: ADaM version, e.g. "1.3", "2.1".
     """
+    version = validate_version(version)
     data = await client.get(f"/mdr/adam/{version}")
     return format_response(data)
 
@@ -28,6 +30,7 @@ async def get_adam_variable(
         data_structure: Data structure name, e.g. "ADSL", "ADAE".
         variable: Variable name, e.g. "USUBJID", "AVAL".
     """
+    version = validate_version(version)
     data_structure = data_structure.upper().strip()
     variable = variable.upper().strip()
     data = await client.get(

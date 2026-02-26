@@ -45,6 +45,15 @@ class TestSearchCdisc:
         result = await search_cdisc(mock_client, query="dm")
         assert "_links" not in result
 
+    async def test_query_url_encoded_with_spaces(self, mock_client: MagicMock) -> None:
+        mock_client.get.return_value = {"results": []}
+        await search_cdisc(mock_client, query="adverse event")
+        call_path = mock_client.get.call_args[0][0]
+        # urlencode converts space to + or %20
+        assert "adverse" in call_path
+        assert "event" in call_path
+        assert " " not in call_path  # space must be encoded
+
 
 class TestGetSdtmDomains:
     async def test_version_in_url(self, mock_client: MagicMock) -> None:
@@ -57,6 +66,10 @@ class TestGetSdtmDomains:
         mock_client.get.return_value = {"datasets": [], "_links": {}}
         result = await get_sdtm_domains(mock_client, version="3.4")
         assert "_links" not in result
+
+    async def test_invalid_version_raises_error(self, mock_client: MagicMock) -> None:
+        with pytest.raises(ValueError, match="invalid characters"):
+            await get_sdtm_domains(mock_client, version="3.4/../admin")
 
 
 class TestGetSdtmDomainVariables:

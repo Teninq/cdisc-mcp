@@ -6,6 +6,7 @@ from typing import Any
 
 from ..client import CDISCClient
 from ..response_formatter import format_response
+from ._validators import validate_version
 
 
 async def get_cdash_domains(client: CDISCClient, version: str) -> dict[str, Any]:
@@ -14,6 +15,7 @@ async def get_cdash_domains(client: CDISCClient, version: str) -> dict[str, Any]
     Args:
         version: CDASH version, e.g. "2.0", "1.1".
     """
+    version = validate_version(version)
     data = await client.get(f"/mdr/cdash/{version}")
     return format_response(data)
 
@@ -27,6 +29,7 @@ async def get_cdash_domain_fields(
         version: CDASH version.
         domain: Domain code, e.g. "DM", "AE", "VS".
     """
+    version = validate_version(version)
     domain = domain.upper().strip()
     data = await client.get(f"/mdr/cdash/{version}/domains/{domain}/fields")
     return format_response(data)
