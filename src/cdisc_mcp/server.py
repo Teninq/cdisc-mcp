@@ -7,7 +7,10 @@ CDISCClient, ensuring tools are testable without a running server.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from fastmcp import FastMCP
 
@@ -18,14 +21,16 @@ from .tools import adam, cdash, search, sdtm, terminology
 logger = logging.getLogger(__name__)
 
 
-def create_server() -> FastMCP:
+def create_server(client: CDISCClient) -> FastMCP:
     """Create and configure the FastMCP server with all CDISC tools.
+
+    Args:
+        client: An already-initialised CDISCClient whose lifecycle is
+                managed by the caller (e.g. via ``async with``).
 
     Returns:
         Configured FastMCP server instance ready to run.
     """
-    config = load_config()
-    client = CDISCClient(config)
     mcp = FastMCP("cdisc-mcp")
 
     @mcp.tool()
@@ -141,11 +146,18 @@ def create_server() -> FastMCP:
     return mcp
 
 
+async def _async_main() -> None:
+    """Async entry point that manages CDISCClient lifecycle via async context manager."""
+    config = load_config()
+    async with CDISCClient(config) as client:
+        mcp = create_server(client)
+        await mcp.run_async()
+
+
 def main() -> None:
     """Entry point for cdisc-mcp command."""
     logging.basicConfig(level=logging.INFO)
-    mcp = create_server()
-    mcp.run()
+    asyncio.run(_async_main())
 
 
 if __name__ == "__main__":
