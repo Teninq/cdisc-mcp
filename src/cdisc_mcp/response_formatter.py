@@ -5,50 +5,79 @@ The CDISC Library API returns HAL-flavoured JSON with hypermedia link blocks
 (_links) and UI ordering hints (ordinal) that are not meaningful to MCP
 tool consumers. These are stripped to reduce token usage.
 
-Long lists nested inside response dicts are truncated to MAX_LIST_LENGTH
-(from cdisc_mcp.config) and a sentinel notice dict is appended so callers
-know that data was omitted.
+Long lists nested inside response dicts are truncated to DEFAULT_MAX_ITEMS
+and a sentinel notice dict is appended so callers know that data was omitted.
+
+When a top-level list is passed directly, it is wrapped in an envelope dict
+with keys: items, total_returned, has_more.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from cdisc_mcp import config
-
 # HAL hypermedia links and display ordering hints — not useful to LLM consumers.
 _EXCLUDED_KEYS: frozenset[str] = frozenset({"_links", "ordinal"})
 
-# Re-export so external callers can reference the constant from this module if
-# needed (e.g. the task-spec test suite imports DEFAULT_MAX_ITEMS).
-DEFAULT_MAX_ITEMS: int = config.MAX_LIST_LENGTH
+# Independent constant — not derived from config so it can be changed without
+# affecting config.MAX_LIST_LENGTH (which controls nested-list truncation in
+# dict responses).
+DEFAULT_MAX_ITEMS: int = 100
 
 
 def format_response(
-    payload: dict[str, Any],
+    payload: dict[str, Any] | list[Any],
     max_items: int = DEFAULT_MAX_ITEMS,
 ) -> dict[str, Any]:
     """Normalise a raw CDISC API response for MCP tool output.
 
+    When *payload* is a **list**:
+    - Trims each item (removing _links and ordinal recursively).
+    - Truncates to *max_items* elements.
+    - Returns an envelope: ``{"items": [...], "total_returned": N, "has_more": bool}``.
+
+    When *payload* is a **dict**:
     - Recursively removes _links and ordinal keys at every nesting level.
     - Truncates any list value that exceeds *max_items* elements; a sentinel
       dict is appended as the final element so consumers know data was cut.
     - Never mutates the original *payload*.
 
     Args:
-        payload: Raw parsed JSON dict from the CDISC Library API.
+        payload: Raw parsed JSON dict or list from the CDISC Library API.
         max_items: Maximum number of items to keep in any list value.
-            Defaults to config.MAX_LIST_LENGTH.
+            Defaults to DEFAULT_MAX_ITEMS (100).
 
     Returns:
         New dict with excluded keys removed and long lists truncated.
     """
+    if isinstance(payload, list):
+        return _wrap_list(payload, max_items=max_items)
     return _trim_dict(payload, max_items=max_items)
 
 
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+def _wrap_list(items: list[Any], max_items: int) -> dict[str, Any]:
+    """Wrap a top-level list in an envelope dict.
+
+    Args:
+        items: The raw list from the API.
+        max_items: Maximum number of items to include.
+
+    Returns:
+        ``{"items": [...trimmed...], "total_returned": N, "has_more": bool}``
+    """
+    has_more = len(items) > max_items
+    kept = items[:max_items]
+    trimmed_items = [_trim_value(item, max_items=max_items) for item in kept]
+    return {
+        "items": trimmed_items,
+        "total_returned": len(trimmed_items),
+        "has_more": has_more,
+    }
+
 
 def _trim_dict(obj: dict[str, Any], max_items: int) -> dict[str, Any]:
     """Return a new dict with excluded keys removed and nested values trimmed."""

@@ -116,20 +116,20 @@ class TestListTruncation:
         assert len(result["items"]) == config.MAX_LIST_LENGTH
 
     def test_long_list_is_truncated(self, sample_sdtm_dataset):
-        """sample_sdtm_dataset has 20 variables — must be truncated."""
+        """Truncation triggers when max_items is set below the variable count."""
         from cdisc_mcp.response_formatter import format_response
-        from cdisc_mcp import config
 
-        result = format_response(sample_sdtm_dataset)
+        # sample_sdtm_dataset has 20 variables; use max_items=5 to force truncation.
+        result = format_response(sample_sdtm_dataset, max_items=5)
 
-        assert len(result["variables"]) <= config.MAX_LIST_LENGTH
+        assert len(result["variables"]) <= 5
 
     def test_truncation_notice_appended(self, sample_sdtm_dataset):
         """A sentinel dict is appended so consumers know data was cut."""
         from cdisc_mcp.response_formatter import format_response
-        from cdisc_mcp import config
 
-        result = format_response(sample_sdtm_dataset)
+        # Force truncation by using a max_items smaller than variable count.
+        result = format_response(sample_sdtm_dataset, max_items=5)
         variables = result["variables"]
 
         # The last element must be the truncation notice
@@ -140,7 +140,8 @@ class TestListTruncation:
         from cdisc_mcp.response_formatter import format_response
 
         original_count = len(sample_sdtm_dataset["variables"])
-        result = format_response(sample_sdtm_dataset)
+        # Force truncation by using a max_items smaller than variable count.
+        result = format_response(sample_sdtm_dataset, max_items=5)
         last = result["variables"][-1]
 
         # The notice must embed the original count so the caller can report it
@@ -148,13 +149,15 @@ class TestListTruncation:
         assert str(original_count) in notice_str
 
     def test_codelist_terms_truncated(self, sample_codelist):
-        """sample_codelist has 15 terms — must be truncated."""
+        """sample_codelist has 150 terms — must be truncated to DEFAULT_MAX_ITEMS."""
         from cdisc_mcp.response_formatter import format_response
-        from cdisc_mcp import config
+        from cdisc_mcp.response_formatter import DEFAULT_MAX_ITEMS
 
         result = format_response(sample_codelist)
 
-        assert len(result["terms"]) <= config.MAX_LIST_LENGTH + 1  # +1 for notice
+        # DEFAULT_MAX_ITEMS is 100; list has 150 items, so truncation fires.
+        # Truncated list length = (DEFAULT_MAX_ITEMS - 1) real items + 1 notice.
+        assert len(result["terms"]) <= DEFAULT_MAX_ITEMS
 
 
 # ---------------------------------------------------------------------------
