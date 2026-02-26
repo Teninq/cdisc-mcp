@@ -2,6 +2,8 @@
 
 CDISC Library MCP Server — exposes CDISC standards data (SDTM, ADaM, CDASH, Controlled Terminology) as MCP tools that AI assistants can call directly.
 
+For a full guide covering installation, API key setup, connecting to Claude Desktop or VS Code, tool reference, and troubleshooting, see the **[User Manual](docs/user-manual.md)**.
+
 ## Installation
 
 ```bash
