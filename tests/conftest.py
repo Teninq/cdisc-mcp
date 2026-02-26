@@ -13,6 +13,11 @@ def api_key() -> str:
 
 
 @pytest.fixture
+def base_url() -> str:
+    return BASE_URL
+
+
+@pytest.fixture
 def mock_env(monkeypatch: pytest.MonkeyPatch, api_key: str) -> None:
     monkeypatch.setenv("CDISC_API_KEY", api_key)
 
@@ -38,14 +43,14 @@ def sample_sdtm_datasets() -> dict:
 def sample_sdtm_dataset() -> dict:
     """Sample SDTM dataset response with 20 variables, _links, and ordinal."""
     return {
-        "_links": {"self": {"href": "/mdr/sdtm/3-4/datasets/DM"}},
-        "name": "DM",
-        "label": "Demographics",
+        "_links": {"self": {"href": "/mdr/sdtm/3-4/datasets/AE"}},
+        "name": "AE",
+        "label": "Adverse Events",
         "ordinal": 1,
         "variables": [
             {
-                "_links": {"self": {"href": f"/mdr/sdtm/3-4/datasets/DM/variables/VAR{i}"}},
-                "name": f"VAR{i}",
+                "_links": {"self": {"href": f"/mdr/sdtm/3-4/datasets/AE/variables/VAR{i:02d}"}},
+                "name": f"VAR{i:02d}",
                 "label": f"Variable {i}",
                 "ordinal": i,
             }
@@ -55,12 +60,47 @@ def sample_sdtm_dataset() -> dict:
 
 
 @pytest.fixture
-def sample_codelist() -> dict:
-    """Sample codelist with 150 terms to test truncation."""
+def sample_sdtm_version_list() -> dict:
+    """Sample SDTM version list response."""
     return {
-        "conceptId": "C66781",
-        "name": "AGEU",
-        "submissionValue": "AGEU",
-        "_links": {"self": {"href": "/..."}},
-        "terms": [{"conceptId": f"C{i}", "submissionValue": f"TERM{i}"} for i in range(150)],
+        "_links": {"self": {"href": "/mdr/sdtm"}},
+        "versions": [
+            {"href": "/mdr/sdtm/3-4", "title": "3-4"},
+            {"href": "/mdr/sdtm/3-3", "title": "3-3"},
+        ],
+    }
+
+
+@pytest.fixture
+def sample_codelist() -> dict:
+    """Sample codelist with terms to test truncation."""
+    return {
+        "conceptId": "C66741",
+        "name": "EPOCH",
+        "submissionValue": "EPOCH",
+        "_links": {"self": {"href": "/mdr/ct/packages/sdtmct-2024-03-29/codelists/C66741"}},
+        "terms": [
+            {"conceptId": f"C{i}", "submissionValue": f"VAL{i:03d}", "preferredTerm": f"Term {i}"}
+            for i in range(150)
+        ],
+    }
+
+
+@pytest.fixture
+def sample_ct_package_list() -> dict:
+    """Sample CT package list response."""
+    return {
+        "_links": {"self": {"href": "/mdr/ct/packages"}},
+        "packages": [
+            {
+                "href": "/mdr/ct/packages/sdtmct-2024-03-29",
+                "title": "sdtmct-2024-03-29",
+                "label": "SDTM CT 2024-03-29",
+            },
+            {
+                "href": "/mdr/ct/packages/adamct-2024-03-29",
+                "title": "adamct-2024-03-29",
+                "label": "ADaM CT 2024-03-29",
+            },
+        ],
     }
