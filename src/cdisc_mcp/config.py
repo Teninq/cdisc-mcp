@@ -8,7 +8,7 @@ from dataclasses import dataclass
 # Module-level constants (used directly by client and tools)
 # ---------------------------------------------------------------------------
 
-BASE_URL: str = "https://library.cdisc.org/api"
+BASE_URL: str = "https://library.cdisc.org/api/cosmos/v2"
 REQUEST_TIMEOUT: float = 30.0
 MAX_LIST_LENGTH: int = 10
 

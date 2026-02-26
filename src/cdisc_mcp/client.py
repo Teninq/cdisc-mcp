@@ -16,7 +16,7 @@ from cachetools import TTLCache
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from .config import Config
-from .errors import AuthenticationError
+from .errors import AuthenticationError, RateLimitError, ResourceNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,8 @@ class CDISCClient:
 
         Raises:
             AuthenticationError: If the API key is invalid (HTTP 401).
+            ResourceNotFoundError: If the resource does not exist (HTTP 404).
+            RateLimitError: If the rate limit is exceeded after all retries (HTTP 429).
             httpx.HTTPStatusError: For other non-retriable HTTP errors.
         """
         async with self._lock:
@@ -99,10 +101,20 @@ class CDISCClient:
             resp = await self._http.get(path)
             if resp.status_code == 401:
                 raise AuthenticationError("Invalid CDISC API key (HTTP 401)")
+            if resp.status_code == 404:
+                raise ResourceNotFoundError(f"Resource not found: {path}")
             resp.raise_for_status()
             return resp.json()
 
-        return await _do()
+        try:
+            return await _do()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 429:
+                retry_after_header = exc.response.headers.get("Retry-After")
+                raise RateLimitError(
+                    retry_after=int(retry_after_header) if retry_after_header else None
+                ) from exc
+            raise
 
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""
