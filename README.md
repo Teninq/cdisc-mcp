@@ -60,6 +60,21 @@ python -m cdisc_mcp.server
 | `get_codelist` | Get a specific CT codelist definition and metadata |
 | `get_codelist_terms` | List all valid terms in a CT codelist (max 100) |
 
+## Web Explorer (Optional)
+
+A lightweight browser UI for interactively testing tools without an AI client.
+
+```bash
+# Install web dependencies
+pip install -e ".[web]"
+
+# Set API key and start the bridge server
+set CDISC_API_KEY=your_api_key_here   # Windows CMD
+python web/app.py
+```
+
+Open **http://localhost:8080** in your browser. The explorer lets you select any of the 12 tools, fill in parameters, run them, and inspect syntax-highlighted JSON responses.
+
 ## Development
 
 ### Running Tests
@@ -89,6 +104,9 @@ src/cdisc_mcp/
         cdash.py         # CDASH domain and field tools
         terminology.py   # Controlled Terminology tools
         _validators.py   # Input validation helpers
+web/
+    app.py               # FastAPI bridge server (HTTP → tool functions)
+    index.html           # Single-file browser explorer UI
 tests/
     test_config.py
     test_client.py

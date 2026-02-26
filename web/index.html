@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CDISC MCP Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+  <style>
+    .tool-item { transition: background 0.1s; }
+    .tool-item.active { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+    .tool-item:not(.active):hover { background: #f1f5f9; }
+    #response-block pre { margin: 0; border-radius: 0.5rem; font-size: 0.8rem; max-height: 60vh; overflow: auto; }
+    .spinner { border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-4 shrink-0">
+    <div class="flex items-center gap-2">
+      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-4M9 3l6 6M9 3v6h6" />
+      </svg>
+      <span class="text-lg font-bold text-gray-900">CDISC MCP Explorer</span>
+    </div>
+    <div class="flex items-center gap-2 ml-auto">
+      <span id="status-dot" class="w-2 h-2 rounded-full bg-gray-300" title="Bridge status"></span>
+      <span id="status-text" class="text-xs text-gray-500">Connecting…</span>
+      <span class="text-gray-300">|</span>
+      <label class="text-xs text-gray-500">Bridge URL</label>
+      <input id="bridge-url-input" type="text" value="http://localhost:8080"
+        class="text-xs border border-gray-200 rounded px-2 py-1 w-52 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        placeholder="http://localhost:8080" />
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-56 bg-white border-r border-gray-200 overflow-y-auto shrink-0 py-3">
+      <div id="sidebar"></div>
+    </aside>
+
+    <!-- Main panel -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div id="welcome" class="text-center text-gray-400 mt-20">
+        <svg class="w-12 h-12 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-lg font-medium">Select a tool from the sidebar</p>
+        <p class="text-sm mt-1">Browse and call CDISC Library API tools interactively</p>
+      </div>
+
+      <div id="tool-panel" class="hidden max-w-2xl">
+        <!-- Tool header -->
+        <div class="mb-5">
+          <h1 id="tool-title" class="text-2xl font-bold text-gray-900"></h1>
+          <p id="tool-desc" class="text-gray-500 mt-1 text-sm"></p>
+        </div>
+
+        <!-- Parameter form -->
+        <form id="param-form" class="space-y-4 mb-5">
+          <div id="param-fields"></div>
+          <button type="submit" id="run-btn"
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2 rounded-lg transition">
+            <span id="run-btn-text">Run Tool</span>
+            <span id="run-spinner" class="spinner hidden"></span>
+          </button>
+        </form>
+
+        <!-- Response panel -->
+        <div id="response-block" class="hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-gray-700">Response
+              <span id="elapsed-badge" class="ml-2 text-xs text-gray-400 font-normal"></span>
+            </span>
+            <button id="copy-btn" onclick="copyJSON()"
+              class="text-xs text-blue-600 hover:underline">Copy JSON</button>
+          </div>
+          <div id="error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3"></div>
+          <div id="json-output" class="hidden border border-gray-200 rounded-lg overflow-hidden bg-white">
+            <pre><code id="json-code" class="language-json"></code></pre>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+const state = {
+  selectedTool: null,
+  tools: [],
+  response: null,
+  loading: false,
+  error: null,
+};
+
+function getBridgeUrl() {
+  return document.getElementById('bridge-url-input').value.replace(/\/$/, '') || 'http://localhost:8080';
+}
+
+document.getElementById('bridge-url-input').addEventListener('change', () => {
+  checkBridgeStatus();
+  if (state.selectedTool) renderToolPanel();
+});
+
+// ---------------------------------------------------------------------------
+// Bridge status check
+// ---------------------------------------------------------------------------
+async function checkBridgeStatus() {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  try {
+    const resp = await fetch(`${getBridgeUrl()}/api/tools`, { signal: AbortSignal.timeout(3000) });
+    if (resp.ok) {
+      dot.className = 'w-2 h-2 rounded-full bg-green-500';
+      txt.textContent = 'Bridge online';
+      return true;
+    }
+  } catch (_) {}
+  dot.className = 'w-2 h-2 rounded-full bg-red-400';
+  txt.textContent = 'Bridge offline';
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Load tools from bridge
+// ---------------------------------------------------------------------------
+async function loadTools() {
+  try {
+    const resp = await fetch(`${getBridgeUrl()}/api/tools`);
+    state.tools = await resp.json();
+    renderSidebar();
+  } catch (e) {
+    document.getElementById('sidebar').innerHTML =
+      '<p class="px-4 text-xs text-red-500 mt-4">Cannot reach bridge server.<br/>Start with:<br/><code class="font-mono">python web/app.py</code></p>';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar rendering
+// ---------------------------------------------------------------------------
+function renderSidebar() {
+  const categories = {};
+  for (const tool of state.tools) {
+    if (!categories[tool.category]) categories[tool.category] = [];
+    categories[tool.category].push(tool);
+  }
+
+  const categoryOrder = ['Search', 'SDTM', 'ADaM', 'CDASH', 'Terminology'];
+  const categoryColors = {
+    'Search': 'text-purple-600',
+    'SDTM': 'text-blue-600',
+    'ADaM': 'text-green-600',
+    'CDASH': 'text-orange-600',
+    'Terminology': 'text-rose-600',
+  };
+
+  let html = '';
+  for (const cat of categoryOrder) {
+    if (!categories[cat]) continue;
+    html += `<div class="px-3 pt-3 pb-1">
+      <p class="text-xs font-semibold uppercase tracking-wider ${categoryColors[cat] || 'text-gray-500'}">${cat}</p>
+    </div>`;
+    for (const tool of categories[cat]) {
+      const isActive = state.selectedTool?.name === tool.name;
+      html += `<div class="tool-item mx-1 px-3 py-1.5 rounded-md text-sm cursor-pointer ${isActive ? 'active' : 'text-gray-700'}"
+        onclick="selectTool('${tool.name}')">${tool.name}</div>`;
+    }
+  }
+  document.getElementById('sidebar').innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Tool selection
+// ---------------------------------------------------------------------------
+function selectTool(name) {
+  state.selectedTool = state.tools.find(t => t.name === name) || null;
+  state.response = null;
+  state.error = null;
+  renderSidebar();
+  renderToolPanel();
+}
+
+// ---------------------------------------------------------------------------
+// Tool panel rendering
+// ---------------------------------------------------------------------------
+function renderToolPanel() {
+  const tool = state.selectedTool;
+  document.getElementById('welcome').classList.add('hidden');
+  const panel = document.getElementById('tool-panel');
+  panel.classList.remove('hidden');
+
+  document.getElementById('tool-title').textContent = tool.name;
+  document.getElementById('tool-desc').textContent = tool.description;
+
+  // Render parameter fields
+  let fieldsHtml = '';
+  for (const p of tool.parameters) {
+    const label = `<label class="block text-sm font-medium text-gray-700 mb-1">
+      ${p.name}${p.required ? ' <span class="text-red-500">*</span>' : ''}
+    </label>`;
+
+    if (p.type === 'select') {
+      const opts = p.options.map(o => `<option value="${o}">${o}</option>`).join('');
+      fieldsHtml += `<div>${label}
+        <select name="${p.name}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+          ${opts}
+        </select>
+        <p class="text-xs text-gray-400 mt-0.5">${p.hint || ''}</p>
+      </div>`;
+    } else {
+      fieldsHtml += `<div>${label}
+        <input type="text" name="${p.name}" placeholder="${p.hint || ''}"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+      </div>`;
+    }
+  }
+
+  if (tool.parameters.length === 0) {
+    fieldsHtml = '<p class="text-sm text-gray-400 italic">No parameters required.</p>';
+  }
+
+  document.getElementById('param-fields').innerHTML = fieldsHtml;
+  document.getElementById('response-block').classList.add('hidden');
+  document.getElementById('run-btn').disabled = false;
+}
+
+// ---------------------------------------------------------------------------
+// Form submission
+// ---------------------------------------------------------------------------
+document.getElementById('param-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!state.selectedTool || state.loading) return;
+
+  const form = e.target;
+  const params = {};
+  for (const el of form.querySelectorAll('input[name], select[name]')) {
+    if (el.value.trim()) params[el.name] = el.value.trim();
+  }
+
+  setLoading(true);
+  state.error = null;
+  state.response = null;
+
+  try {
+    const resp = await fetch(`${getBridgeUrl()}/api/tools/${state.selectedTool.name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ params }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      state.error = buildErrorMessage(resp.status, data.detail);
+    } else {
+      state.response = data;
+    }
+  } catch (err) {
+    state.error = `Cannot reach bridge server at ${getBridgeUrl()}. Make sure it is running.`;
+  }
+
+  setLoading(false);
+  renderResponse();
+});
+
+function buildErrorMessage(status, detail) {
+  const messages = {
+    401: 'Authentication failed — check that CDISC_API_KEY is set correctly on the bridge server.',
+    404: `Resource not found: ${detail}`,
+    422: `Invalid parameters: ${detail}`,
+    429: `Rate limit exceeded. ${detail}`,
+    500: `Server error: ${detail}`,
+    503: 'Bridge server not ready. Restart with: python web/app.py',
+  };
+  return messages[status] || `Error ${status}: ${detail}`;
+}
+
+// ---------------------------------------------------------------------------
+// Response rendering
+// ---------------------------------------------------------------------------
+function renderResponse() {
+  const block = document.getElementById('response-block');
+  block.classList.remove('hidden');
+
+  const errDiv = document.getElementById('error-msg');
+  const jsonDiv = document.getElementById('json-output');
+  const jsonCode = document.getElementById('json-code');
+  const elapsedBadge = document.getElementById('elapsed-badge');
+
+  if (state.error) {
+    errDiv.textContent = state.error;
+    errDiv.classList.remove('hidden');
+    jsonDiv.classList.add('hidden');
+    elapsedBadge.textContent = '';
+  } else {
+    errDiv.classList.add('hidden');
+    jsonDiv.classList.remove('hidden');
+    const pretty = JSON.stringify(state.response.result, null, 2);
+    jsonCode.textContent = pretty;
+    hljs.highlightElement(jsonCode);
+    elapsedBadge.textContent = `(${state.response.elapsed_ms} ms)`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Copy JSON
+// ---------------------------------------------------------------------------
+function copyJSON() {
+  if (!state.response) return;
+  const text = JSON.stringify(state.response.result, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy JSON'; }, 1500);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Loading state
+// ---------------------------------------------------------------------------
+function setLoading(loading) {
+  state.loading = loading;
+  document.getElementById('run-spinner').classList.toggle('hidden', !loading);
+  document.getElementById('run-btn-text').textContent = loading ? 'Running…' : 'Run Tool';
+  document.getElementById('run-btn').disabled = loading;
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+(async () => {
+  await checkBridgeStatus();
+  await loadTools();
+})();
+</script>
+</body>
+</html>

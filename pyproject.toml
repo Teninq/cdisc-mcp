@@ -29,6 +29,11 @@ dev = [
     "mypy>=1.10",
     "types-cachetools",
 ]
+web = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
