@@ -65,3 +65,40 @@ class TestFormatResponseList:
         assert result["items"] == []
         assert result["total_returned"] == 0
         assert result["has_more"] is False
+
+
+class TestFormatResponseAdvanced:
+    def test_removes_links_recursively_in_nested_dict(self) -> None:
+        data: dict[str, Any] = {
+            "name": "DM",
+            "variable": {
+                "name": "USUBJID",
+                "_links": {"self": {"href": "/nested"}},
+                "ordinal": 2,
+            },
+        }
+        result = format_response(data)
+        assert "_links" not in result["variable"]
+        assert "ordinal" not in result["variable"]
+        assert result["variable"]["name"] == "USUBJID"
+
+    def test_does_not_mutate_input_list(self) -> None:
+        items: list[Any] = [{"name": f"ITEM{i}", "_links": {}} for i in range(5)]
+        original_len = len(items)
+        original_first = dict(items[0])
+        format_response(items)
+        assert len(items) == original_len
+        assert items[0] == original_first
+
+    def test_nested_list_in_dict_truncated(self) -> None:
+        data: dict[str, Any] = {
+            "domain": "AE",
+            "variables": [{"name": f"VAR{i}", "ordinal": i} for i in range(200)],
+        }
+        result = format_response(data, max_items=5)
+        # nested list should be truncated
+        assert len(result["variables"]) <= 6  # max 5 items + possible sentinel
+        # ordinal should be stripped from remaining items
+        for item in result["variables"]:
+            if "_truncated" not in item:
+                assert "ordinal" not in item
