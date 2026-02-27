@@ -1,7 +1,7 @@
 """Unit tests for src/cdisc_mcp/server.py
 
 Tests the server factory function create_server() and verifies that all
-12 MCP tools are properly registered. Uses AsyncMock for CDISCClient.
+11 MCP tools are properly registered. Uses AsyncMock for CDISCClient.
 """
 
 from unittest.mock import AsyncMock, MagicMock
@@ -36,14 +36,13 @@ class TestCreateServer:
 
         assert server.name == "cdisc-mcp"
 
-    def test_all_12_tools_registered(self, mock_client):
+    def test_all_11_tools_registered(self, mock_client):
         from cdisc_mcp.server import create_server
 
         server = create_server(mock_client)
 
         expected_tools = {
             "list_products",
-            "search_cdisc",
             "get_sdtm_domains",
             "get_sdtm_domain_variables",
             "get_sdtm_variable",
@@ -85,19 +84,6 @@ class TestServerToolCallsClient:
         mock_client.get.assert_called_once_with("/mdr/products")
 
     @pytest.mark.asyncio
-    async def test_search_cdisc_passes_query(self, mock_client):
-        from cdisc_mcp.server import create_server
-
-        mock_client.get.return_value = {"_links": {}, "results": []}
-        server = create_server(mock_client)
-
-        tools = server._tool_manager._tools
-        await tools["search_cdisc"].fn(query="adverse event")
-
-        call_url = mock_client.get.call_args[0][0]
-        assert "adverse+event" in call_url or "adverse%20event" in call_url
-
-    @pytest.mark.asyncio
     async def test_get_sdtm_domains_passes_version(self, mock_client):
         from cdisc_mcp.server import create_server
 
@@ -107,7 +93,7 @@ class TestServerToolCallsClient:
         tools = server._tool_manager._tools
         await tools["get_sdtm_domains"].fn(version="3-4")
 
-        mock_client.get.assert_called_once_with("/mdr/sdtm/3-4")
+        mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
 
     @pytest.mark.asyncio
     async def test_list_ct_packages_delegates_to_terminology(self, mock_client):
@@ -132,7 +118,7 @@ class TestServerToolCallsClient:
         await tools["get_sdtm_domain_variables"].fn(version="3-4", domain="AE")
 
         mock_client.get.assert_called_once_with(
-            "/mdr/sdtm/3-4/datasets/AE/variables"
+            "/mdr/sdtmig/3-4/datasets/AE/variables"
         )
 
     @pytest.mark.asyncio
@@ -146,7 +132,7 @@ class TestServerToolCallsClient:
         await tools["get_sdtm_variable"].fn(version="3-4", domain="AE", variable="AETERM")
 
         mock_client.get.assert_called_once_with(
-            "/mdr/sdtm/3-4/datasets/AE/variables/AETERM"
+            "/mdr/sdtmig/3-4/datasets/AE/variables/AETERM"
         )
 
     @pytest.mark.asyncio
@@ -159,7 +145,7 @@ class TestServerToolCallsClient:
         tools = server._tool_manager._tools
         await tools["get_adam_datastructures"].fn(version="1-3")
 
-        mock_client.get.assert_called_once_with("/mdr/adam/1-3")
+        mock_client.get.assert_called_once_with("/mdr/adam/adamig-1-3/datastructures")
 
     @pytest.mark.asyncio
     async def test_get_adam_variable_passes_all_args(self, mock_client):
@@ -174,7 +160,7 @@ class TestServerToolCallsClient:
         )
 
         mock_client.get.assert_called_once_with(
-            "/mdr/adam/1-3/ADSL/variables/USUBJID"
+            "/mdr/adam/adamig-1-3/datastructures/ADSL/variables/USUBJID"
         )
 
     @pytest.mark.asyncio
@@ -187,7 +173,7 @@ class TestServerToolCallsClient:
         tools = server._tool_manager._tools
         await tools["get_cdash_domains"].fn(version="2-0")
 
-        mock_client.get.assert_called_once_with("/mdr/cdash/2-0")
+        mock_client.get.assert_called_once_with("/mdr/cdashig/2-0/domains")
 
     @pytest.mark.asyncio
     async def test_get_cdash_domain_fields_passes_version_and_domain(self, mock_client):
@@ -200,7 +186,7 @@ class TestServerToolCallsClient:
         await tools["get_cdash_domain_fields"].fn(version="2-0", domain="DM")
 
         mock_client.get.assert_called_once_with(
-            "/mdr/cdash/2-0/domains/DM/fields"
+            "/mdr/cdashig/2-0/domains/DM/fields"
         )
 
     @pytest.mark.asyncio

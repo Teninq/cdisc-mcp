@@ -8,7 +8,7 @@ by pytest-httpx.
 
 import pytest
 
-BASE_URL = "https://library.cdisc.org/api/cosmos/v2"
+BASE_URL = "https://library.cdisc.org/api"
 
 
 @pytest.fixture(autouse=True)

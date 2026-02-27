@@ -27,31 +27,38 @@ def mock_client():
 class TestListCtPackages:
 
     @pytest.mark.asyncio
-    async def test_returns_formatted_response(self, mock_client, sample_ct_package_list):
+    async def test_returns_formatted_response(self, mock_client):
         from cdisc_mcp.tools.terminology import list_ct_packages
 
-        mock_client.get.return_value = sample_ct_package_list
+        mock_client.get.return_value = {"_links": {"packages": []}}
         result = await list_ct_packages(mock_client)
 
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    async def test_calls_correct_endpoint(self, mock_client, sample_ct_package_list):
+    async def test_calls_correct_endpoint(self, mock_client):
         from cdisc_mcp.tools.terminology import list_ct_packages
 
-        mock_client.get.return_value = sample_ct_package_list
+        mock_client.get.return_value = {"_links": {"packages": []}}
         await list_ct_packages(mock_client)
 
         mock_client.get.assert_called_once_with("/mdr/ct/packages")
 
     @pytest.mark.asyncio
-    async def test_links_stripped(self, mock_client, sample_ct_package_list):
+    async def test_links_stripped(self, mock_client):
         from cdisc_mcp.tools.terminology import list_ct_packages
 
-        mock_client.get.return_value = sample_ct_package_list
+        mock_client.get.return_value = {
+            "_links": {
+                "packages": [
+                    {"href": "/mdr/ct/packages/sdtmct-2024-09-27", "title": "SDTM CT", "type": "Terminology"}
+                ]
+            }
+        }
         result = await list_ct_packages(mock_client)
 
         assert "_links" not in result
+        assert result["count"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -100,10 +107,10 @@ class TestGetCodelist:
 class TestGetCodelistTerms:
 
     @pytest.mark.asyncio
-    async def test_calls_correct_endpoint(self, mock_client, sample_codelist):
+    async def test_calls_correct_endpoint(self, mock_client):
         from cdisc_mcp.tools.terminology import get_codelist_terms
 
-        mock_client.get.return_value = sample_codelist
+        mock_client.get.return_value = {"_links": {"terms": []}}
         await get_codelist_terms(mock_client, package_id="sdtmct-2024-03-29", codelist_id="C66741")
 
         mock_client.get.assert_called_once_with(
@@ -111,10 +118,18 @@ class TestGetCodelistTerms:
         )
 
     @pytest.mark.asyncio
-    async def test_returns_formatted_response(self, mock_client, sample_codelist):
+    async def test_returns_formatted_response(self, mock_client):
         from cdisc_mcp.tools.terminology import get_codelist_terms
 
-        mock_client.get.return_value = {"terms": [{"conceptId": "C1", "submissionValue": "VAL1"}]}
+        mock_client.get.return_value = {
+            "_links": {
+                "terms": [
+                    {"href": "/mdr/ct/packages/pkg/codelists/C1/terms/C25301", "title": "Day", "type": "Code List Value"}
+                ]
+            }
+        }
         result = await get_codelist_terms(mock_client, package_id="pkg", codelist_id="C1")
 
         assert isinstance(result, dict)
+        assert "terms" in result
+        assert result["count"] == 1

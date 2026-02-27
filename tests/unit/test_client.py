@@ -31,7 +31,7 @@ def client(config):
     return CDISCClient(config)
 
 
-BASE_URL = "https://library.cdisc.org/api/cosmos/v2"
+BASE_URL = "https://library.cdisc.org/api"
 
 
 # ---------------------------------------------------------------------------

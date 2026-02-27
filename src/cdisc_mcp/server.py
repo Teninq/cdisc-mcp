@@ -38,15 +38,6 @@ def create_server(client: CDISCClient) -> FastMCP:
         return await search.list_products(client)
 
     @mcp.tool()
-    async def search_cdisc(query: str) -> dict:
-        """Search across all CDISC standards by keyword.
-
-        Args:
-            query: Search keyword, e.g. "adverse event", "AEDECOD", "demographics"
-        """
-        return await search.search_cdisc(client, query)
-
-    @mcp.tool()
     async def get_sdtm_domains(version: str) -> dict:
         """List all SDTM domains for a given version.
 

@@ -37,7 +37,7 @@ class TestGetSdtmDomains:
         mock_client.get.return_value = {"datasets": [], "_links": {}}
         await get_sdtm_domains(mock_client, version="3-4")
 
-        mock_client.get.assert_called_once_with("/mdr/sdtm/3-4")
+        mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
 
     @pytest.mark.asyncio
     async def test_raises_for_empty_version(self, mock_client):
@@ -58,8 +58,12 @@ class TestGetSdtmDomains:
         from cdisc_mcp.tools.sdtm import get_sdtm_domains
 
         mock_client.get.return_value = {
-            "_links": {"self": {"href": "/mdr/sdtm/3-4"}},
-            "datasets": [{"name": "AE", "label": "Adverse Events"}],
+            "_links": {
+                "datasets": [{"href": "/mdr/sdtmig/3-4/datasets/AE", "title": "Adverse Events", "type": "SDTM Dataset"}],
+                "self": {"href": "/mdr/sdtmig/3-4/datasets"},
+            },
+            "label": "SDTMIG v3.4",
+            "version": "3-4",
         }
         result = await get_sdtm_domains(mock_client, version="3-4")
 
@@ -78,7 +82,7 @@ class TestGetSdtmDomainVariables:
     async def test_domain_uppercased_before_call(self, mock_client):
         from cdisc_mcp.tools.sdtm import get_sdtm_domain_variables
 
-        mock_client.get.return_value = {"variables": [], "_links": {}}
+        mock_client.get.return_value = {"_links": {"datasetVariables": []}, "label": "AE"}
         await get_sdtm_domain_variables(mock_client, version="3-4", domain="ae")
 
         call_args = mock_client.get.call_args[0][0]
@@ -88,20 +92,23 @@ class TestGetSdtmDomainVariables:
     async def test_version_and_domain_in_url(self, mock_client):
         from cdisc_mcp.tools.sdtm import get_sdtm_domain_variables
 
-        mock_client.get.return_value = {"variables": [], "_links": {}}
+        mock_client.get.return_value = {"_links": {"datasetVariables": []}, "label": "DM"}
         await get_sdtm_domain_variables(mock_client, version="3-4", domain="DM")
 
-        mock_client.get.assert_called_once_with("/mdr/sdtm/3-4/datasets/DM/variables")
+        mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets/DM/variables")
 
     @pytest.mark.asyncio
     async def test_returns_formatted_response(self, mock_client):
         from cdisc_mcp.tools.sdtm import get_sdtm_domain_variables
 
         mock_client.get.return_value = {
-            "_links": {"self": {"href": "/mdr/sdtm/3-4/datasets/DM/variables"}},
-            "variables": [
-                {"name": "STUDYID", "label": "Study Identifier", "ordinal": 1}
-            ],
+            "_links": {
+                "datasetVariables": [
+                    {"href": "/mdr/sdtmig/3-4/datasets/DM/variables/STUDYID", "title": "Study Identifier", "type": "SDTM Dataset Variable"}
+                ],
+                "self": {"href": "/mdr/sdtmig/3-4/datasets/DM/variables"},
+            },
+            "label": "Demographics",
         }
         result = await get_sdtm_domain_variables(mock_client, version="3-4", domain="DM")
 
@@ -134,5 +141,5 @@ class TestGetSdtmVariable:
         await get_sdtm_variable(mock_client, version="3-4", domain="AE", variable="AETERM")
 
         mock_client.get.assert_called_once_with(
-            "/mdr/sdtm/3-4/datasets/AE/variables/AETERM"
+            "/mdr/sdtmig/3-4/datasets/AE/variables/AETERM"
         )

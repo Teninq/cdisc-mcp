@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from ..client import CDISCClient
-from ..response_formatter import format_response
 from ._validators import validate_version
 
 

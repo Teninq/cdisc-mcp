@@ -3,7 +3,7 @@
 import pytest
 
 FAKE_API_KEY = "test-api-key-12345"
-BASE_URL = "https://library.cdisc.org/api/cosmos/v2"
+BASE_URL = "https://library.cdisc.org/api"
 
 
 @pytest.fixture
