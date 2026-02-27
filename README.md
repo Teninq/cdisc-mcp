@@ -4,7 +4,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/header-dark.svg">
-  <img src="docs/header-light.svg" alt="CDISC MCP" width="728">
+  <img src="docs/cdisc-mcp.png" alt="CDISC MCP" width="728">
 </picture>
 
 <br/>
