@@ -43,7 +43,8 @@ docs/_build/
 *.env
 
 # Claude Code
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 
 # Playwright MCP output
 .playwright-mcp/
