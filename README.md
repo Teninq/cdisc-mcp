@@ -33,7 +33,7 @@
 
 The **CDISC MCP Server** connects AI assistants (Claude, VS Code Copilot, Cursor, etc.) to the [CDISC Library REST API](https://library.cdisc.org), exposing 11 structured tools for querying clinical trial data standards. Ask your AI assistant questions like:
 
-> *"What variables are in the SDTM AE domain?"*
+> *"What variables are in the SDTM AE domain?"*/m
 > *"Show me the ADSL variables in ADaM IG 1.3"*
 > *"List all available Controlled Terminology packages"*
 
