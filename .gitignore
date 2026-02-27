@@ -41,3 +41,9 @@ docs/_build/
 # Secrets
 .env
 *.env
+
+# Claude Code
+.claude/settings.local.json
+
+# Playwright MCP output
+.playwright-mcp/
