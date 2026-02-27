@@ -9,6 +9,7 @@ Or directly with uvicorn:
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -35,7 +36,7 @@ from cdisc_mcp.tools.sdtm import (
     get_sdtm_domains,
     get_sdtm_variable,
 )
-from cdisc_mcp.tools.search import list_products, search_cdisc
+from cdisc_mcp.tools.search import list_products
 from cdisc_mcp.tools.terminology import get_codelist, get_codelist_terms, list_ct_packages
 
 # ---------------------------------------------------------------------------
@@ -50,31 +51,18 @@ TOOLS_METADATA: list[dict[str, Any]] = [
         "description": "List all available CDISC standards and their published versions.",
         "parameters": [],
     },
-    {
-        "name": "search_cdisc",
-        "category": "Search",
-        "description": "Full-text search across all CDISC standards (variable names, labels, descriptions, codelist terms).",
-        "parameters": [
-            {
-                "name": "query",
-                "type": "string",
-                "required": True,
-                "hint": "e.g. 'adverse event', 'AEDECOD'",
-            }
-        ],
-    },
     # SDTM
     {
         "name": "get_sdtm_domains",
         "category": "SDTM",
-        "description": "List all SDTM domains for a given SDTM-IG version.",
+        "description": "List all SDTM datasets for a given SDTM-IG version.",
         "parameters": [
             {
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["3.4", "3.3", "3.2", "3.1.3"],
-                "hint": "SDTM-IG version",
+                "options": ["3-4", "3-3", "3-2", "3-1-3"],
+                "hint": "SDTM-IG version (use dashes)",
             }
         ],
     },
@@ -87,8 +75,8 @@ TOOLS_METADATA: list[dict[str, Any]] = [
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["3.4", "3.3", "3.2", "3.1.3"],
-                "hint": "SDTM-IG version",
+                "options": ["3-4", "3-3", "3-2", "3-1-3"],
+                "hint": "SDTM-IG version (use dashes)",
             },
             {
                 "name": "domain",
@@ -108,8 +96,8 @@ TOOLS_METADATA: list[dict[str, Any]] = [
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["3.4", "3.3", "3.2", "3.1.3"],
-                "hint": "SDTM-IG version",
+                "options": ["3-4", "3-3", "3-2", "3-1-3"],
+                "hint": "SDTM-IG version (use dashes)",
             },
             {
                 "name": "domain",
@@ -130,14 +118,14 @@ TOOLS_METADATA: list[dict[str, Any]] = [
     {
         "name": "get_adam_datastructures",
         "category": "ADaM",
-        "description": "List all ADaM data structures for a given ADaM version.",
+        "description": "List all ADaM data structures for a given ADaM IG version.",
         "parameters": [
             {
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["2.1", "1.3"],
-                "hint": "ADaM version",
+                "options": ["1-3", "1-2", "1-1", "1-0"],
+                "hint": "ADaM IG version (use dashes)",
             }
         ],
     },
@@ -150,15 +138,15 @@ TOOLS_METADATA: list[dict[str, Any]] = [
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["2.1", "1.3"],
-                "hint": "ADaM version",
+                "options": ["1-3", "1-2", "1-1", "1-0"],
+                "hint": "ADaM IG version (use dashes)",
             },
             {
                 "name": "data_structure",
                 "type": "select",
                 "required": True,
-                "options": ["ADSL", "ADAE", "ADLB", "ADCM", "ADTTE", "ADEX", "ADVS", "ADEG"],
-                "hint": "Data structure name",
+                "options": ["ADSL", "BDS", "TTE"],
+                "hint": "Data structure name (ADSL, BDS, TTE)",
             },
             {
                 "name": "variable",
@@ -172,14 +160,14 @@ TOOLS_METADATA: list[dict[str, Any]] = [
     {
         "name": "get_cdash_domains",
         "category": "CDASH",
-        "description": "List all CDASH domains for a given CDASH version.",
+        "description": "List all CDASH domains for a given CDASH IG version.",
         "parameters": [
             {
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["2.0", "1.1"],
-                "hint": "CDASH version",
+                "options": ["2-1", "2-0", "1-1-1"],
+                "hint": "CDASH IG version (use dashes)",
             }
         ],
     },
@@ -192,8 +180,8 @@ TOOLS_METADATA: list[dict[str, Any]] = [
                 "name": "version",
                 "type": "select",
                 "required": True,
-                "options": ["2.0", "1.1"],
-                "hint": "CDASH version",
+                "options": ["2-1", "2-0", "1-1-1"],
+                "hint": "CDASH IG version (use dashes)",
             },
             {
                 "name": "domain",
@@ -254,7 +242,6 @@ TOOLS_METADATA: list[dict[str, Any]] = [
 # Map tool names to their handler functions
 _TOOL_HANDLERS: dict[str, Any] = {
     "list_products": list_products,
-    "search_cdisc": search_cdisc,
     "get_sdtm_domains": get_sdtm_domains,
     "get_sdtm_domain_variables": get_sdtm_domain_variables,
     "get_sdtm_variable": get_sdtm_variable,
@@ -358,4 +345,17 @@ async def call_tool(tool_name: str, request: ToolRequest) -> ToolResponse:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except OSError as e:
+        if "10048" in str(e) or "address already in use" in str(e).lower():
+            print(
+                f"\nPort {port} is already in use. Kill the previous process first:\n\n"
+                f"  PowerShell:  Get-Process -Id (Get-NetTCPConnection -LocalPort {port}"
+                f" -ErrorAction SilentlyContinue).OwningProcess | Stop-Process -Force\n"
+                f"  CMD:         for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :{port}') do taskkill /PID %a /F\n\n"
+                f"Or start on a different port:  set PORT=8081 && python web/app.py\n"
+            )
+        else:
+            raise

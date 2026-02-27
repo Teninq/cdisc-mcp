@@ -7,7 +7,7 @@ from dataclasses import dataclass
 # Module-level constants (used directly by client and tools)
 # ---------------------------------------------------------------------------
 
-BASE_URL: str = "https://library.cdisc.org/api/cosmos/v2"
+BASE_URL: str = "https://library.cdisc.org/api"
 REQUEST_TIMEOUT: float = 30.0
 MAX_LIST_LENGTH: int = 10
 
@@ -30,7 +30,7 @@ class Config:
     """
 
     api_key: str
-    base_url: str = "https://library.cdisc.org/api/cosmos/v2"
+    base_url: str = "https://library.cdisc.org/api"
     cache_ttl: int = 3600
     cache_maxsize: int = 256
     max_retries: int = 3

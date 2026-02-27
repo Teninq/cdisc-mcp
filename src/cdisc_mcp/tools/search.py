@@ -1,12 +1,25 @@
-"""MCP tools for CDISC Library product discovery and global search."""
+"""MCP tools for CDISC Library product discovery."""
 
 from __future__ import annotations
 
 from typing import Any
-from urllib.parse import urlencode
 
 from ..client import CDISCClient
-from ..response_formatter import format_response
+
+
+def _hal_items(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    """Extract a named list from HAL _links and return clean items."""
+    items = data.get("_links", {}).get(key, [])
+    return [
+        {
+            "name": item["href"].rstrip("/").split("/")[-1],
+            "title": item.get("title"),
+            "type": item.get("type"),
+            "href": item["href"],
+        }
+        for item in items
+        if isinstance(item, dict)
+    ]
 
 
 async def list_products(client: CDISCClient) -> dict[str, Any]:
@@ -17,24 +30,33 @@ async def list_products(client: CDISCClient) -> dict[str, Any]:
     are available before querying specific content.
 
     Returns:
-        Dict with product information.
+        Dict with product information grouped by standard area.
     """
     data = await client.get("/mdr/products")
-    return format_response(data)
+    links = data.get("_links", {})
 
+    result: dict[str, Any] = {}
+    for group_key, group_val in links.items():
+        if group_key in ("self",):
+            continue
+        if isinstance(group_val, dict):
+            group_links = group_val.get("_links", {})
+            group_items: dict[str, list[str]] = {}
+            for product_key, product_list in group_links.items():
+                if product_key in ("self",) or not isinstance(product_list, list):
+                    continue
+                group_items[product_key] = [
+                    item.get("title") or item.get("href", "").split("/")[-1]
+                    for item in product_list
+                    if isinstance(item, dict) and "href" in item
+                ]
+            if group_items:
+                result[group_key] = group_items
+        elif isinstance(group_val, list):
+            result[group_key] = [
+                item.get("title") or item.get("href", "").split("/")[-1]
+                for item in group_val
+                if isinstance(item, dict) and "href" in item
+            ]
 
-async def search_cdisc(client: CDISCClient, query: str) -> dict[str, Any]:
-    """Search across all CDISC standards by keyword.
-
-    Searches variable names, labels, descriptions, and codelist terms across
-    all CDISC standards.
-
-    Args:
-        query: Search keyword or phrase (e.g., "adverse event", "AEDECOD").
-
-    Returns:
-        Dict with matching results.
-    """
-    params = urlencode({"query": query})
-    data = await client.get(f"/mdr/search?{params}")
-    return format_response(data)
+    return result
