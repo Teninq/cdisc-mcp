@@ -183,6 +183,163 @@ python web/app.py
 }
 ```
 
+### Claude Code (CLI)
+
+Claude Code は MCP サーバーを **ユーザー** (グローバル、全プロジェクト対象) と **プロジェクト** (ローカル、現在のプロジェクトのみ) の 2 つのスコープでサポートしています。
+
+**オプション A — CLI コマンド (推奨)**
+
+```bash
+# グローバルに追加 (全プロジェクトで利用可能)
+claude mcp add cdisc-mcp -e CDISC_API_KEY=あなたのキー -- python -m cdisc_mcp.server
+
+# 現在のプロジェクトのみに追加
+claude mcp add cdisc-mcp --scope project -e CDISC_API_KEY=あなたのキー -- python -m cdisc_mcp.server
+
+# サーバーが登録されたか確認
+claude mcp list
+```
+
+**オプション B — `~/.claude.json` を直接編集**
+
+```json
+{
+  "mcpServers": {
+    "cdisc-mcp": {
+      "command": "python",
+      "args": ["-m", "cdisc_mcp.server"],
+      "env": {
+        "CDISC_API_KEY": "あなたのキー"
+      }
+    }
+  }
+}
+```
+
+> **ヒント：** すでにシステム環境変数に `CDISC_API_KEY` を設定している場合は、`env` ブロックを完全に省略できます。Claude Code は環境変数を自動的に継承します。
+
+登録が完了したら、任意の Claude Code セッションで `/mcp` コマンドを使って状態を確認し、AI との対話形式でツールを利用できます：
+
+```
+ユーザー: バージョン 3.4 の SDTM にはどのようなドメインが定義されていますか？
+Claude: [自動的に version="3-4" パラメータを使用して get_sdtm_domains を呼び出し] ...
+```
+
+---
+
+## 自作の Python ツールでの利用
+
+公式の MCP クライアント SDK を使えば、あらゆる Python スクリプトからプログラム内で CDISC MCP の各ツールを呼び出せます。
+
+### クライアントライブラリのインストール
+
+```bash
+pip install mcp
+```
+
+### 最小構成のサンプル
+
+```python
+import asyncio
+import os
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+SERVER = StdioServerParameters(
+    command="python",
+    args=["-m", "cdisc_mcp.server"],
+    env={"CDISC_API_KEY": os.environ["CDISC_API_KEY"]},
+)
+
+async def main():
+    async with stdio_client(SERVER) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # 利用可能なすべてのツールをリストアップ
+            tools = await session.list_tools()
+            print([t.name for t in tools.tools])
+
+            # ツールの呼び出し
+            result = await session.call_tool(
+                "get_sdtm_domains",
+                arguments={"version": "3-4"},
+            )
+            print(result.content[0].text)
+
+asyncio.run(main())
+```
+
+### 再利用可能なヘルパー関数のサンプル
+
+```python
+import asyncio, os, json
+from contextlib import asynccontextmanager
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+_SERVER = StdioServerParameters(
+    command="python",
+    args=["-m", "cdisc_mcp.server"],
+    env={"CDISC_API_KEY": os.environ["CDISC_API_KEY"]},
+)
+
+@asynccontextmanager
+async def cdisc_session():
+    """初期化済みの MCP セッションを返す非同期コンテキストマネージャー"""
+    async with stdio_client(_SERVER) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            yield session
+
+async def call(tool: str, **kwargs) -> dict:
+    async with cdisc_session() as s:
+        result = await s.call_tool(tool, arguments=kwargs)
+        return json.loads(result.content[0].text)
+
+# --- 使用例 ---
+async def demo():
+    # SDTM のドメイン一覧を取得
+    domains = await call("get_sdtm_domains", version="3-4")
+
+    # AE (有害事象) ドメインに含まれるすべての変数を取得
+    variables = await call("get_sdtm_domain_variables", version="3-4", domain="AE")
+
+    # AETERM (有害事象の分類用語) 1つの定義のみを取得
+    aeterm = await call("get_sdtm_variable", version="3-4", domain="AE", variable="AETERM")
+
+    print(aeterm)
+
+asyncio.run(demo())
+```
+
+### 利用可能なツールの署名 (早見表)
+
+```python
+# プロダクト・バージョン情報
+await session.call_tool("list_products", {})
+
+# SDTM
+await session.call_tool("get_sdtm_domains",          {"version": "3-4"})
+await session.call_tool("get_sdtm_domain_variables", {"version": "3-4", "domain": "AE"})
+await session.call_tool("get_sdtm_variable",         {"version": "3-4", "domain": "AE", "variable": "AETERM"})
+
+# ADaM
+await session.call_tool("get_adam_datastructures",   {"version": "1-3"})
+await session.call_tool("get_adam_variable",         {"version": "1-3", "data_structure": "ADSL", "variable": "USUBJID"})
+
+# CDASH
+await session.call_tool("get_cdash_domains",         {"version": "2-0"})
+await session.call_tool("get_cdash_domain_fields",   {"version": "2-0", "domain": "AE"})
+
+# Controlled Terminology (管理用語)
+await session.call_tool("list_ct_packages",          {})
+await session.call_tool("get_codelist",              {"package_id": "sdtmct-2024-03-29", "codelist_id": "C66781"})
+await session.call_tool("get_codelist_terms",        {"package_id": "sdtmct-2024-03-29", "codelist_id": "AGEU"})
+```
+
+> **バージョンの書式指定：** ドット記号は使わず、常に代えてハイフン記号を使用してください (例: `"3.4"` ではなく `"3-4"` と指定)。
+
 ---
 
 ## アーキテクチャ

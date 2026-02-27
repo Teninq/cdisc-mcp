@@ -183,6 +183,163 @@ Web 探索器功能：
 }
 ```
 
+### Claude Code (CLI)
+
+Claude Code 支持在两个范围内配置 MCP 服务器：**用户** (全局级别，适用于所有项目) 与 **项目** (本地级别，仅限当前项目)。
+
+**选项 A — 命令行方式 (推荐)**
+
+```bash
+# 全局添加 (适用于所有项目)
+claude mcp add cdisc-mcp -e CDISC_API_KEY=你的密钥 -- python -m cdisc_mcp.server
+
+# 仅在当前项目中添加
+claude mcp add cdisc-mcp --scope project -e CDISC_API_KEY=你的密钥 -- python -m cdisc_mcp.server
+
+# 确认服务器是否已成功注册
+claude mcp list
+```
+
+**选项 B — 直接编辑 `~/.claude.json`**
+
+```json
+{
+  "mcpServers": {
+    "cdisc-mcp": {
+      "command": "python",
+      "args": ["-m", "cdisc_mcp.server"],
+      "env": {
+        "CDISC_API_KEY": "你的密钥"
+      }
+    }
+  }
+}
+```
+
+> **提示：** 如果 `CDISC_API_KEY` 已经存在于你的系统环境变量中，可以完全省略 `env` 块——Claude Code 会自动继承。
+
+注册完成后，在任意 Claude Code 会话中输入 `/mcp` 确认状态，然后就可以对话方式使用这些工具了：
+
+```
+提问: SDTM 版本 3.4 定义了哪些数据域?
+Claude: [自动调用带有 version="3-4" 参数的 get_sdtm_domains 接口] ...
+```
+
+---
+
+## 在你开发的 Python 工具中集成
+
+通过官方提供的 MCP 客户端库 (SDK)，你可以在任何 Python 脚本中通过编程方式调用 CDISC MCP 工具。
+
+### 安装客户端库
+
+```bash
+pip install mcp
+```
+
+### 极简示例
+
+```python
+import asyncio
+import os
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+SERVER = StdioServerParameters(
+    command="python",
+    args=["-m", "cdisc_mcp.server"],
+    env={"CDISC_API_KEY": os.environ["CDISC_API_KEY"]},
+)
+
+async def main():
+    async with stdio_client(SERVER) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # 列出所有可用的工具
+            tools = await session.list_tools()
+            print([t.name for t in tools.tools])
+
+            # 执行工具调用
+            result = await session.call_tool(
+                "get_sdtm_domains",
+                arguments={"version": "3-4"},
+            )
+            print(result.content[0].text)
+
+asyncio.run(main())
+```
+
+### 可复用封装示例
+
+```python
+import asyncio, os, json
+from contextlib import asynccontextmanager
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+_SERVER = StdioServerParameters(
+    command="python",
+    args=["-m", "cdisc_mcp.server"],
+    env={"CDISC_API_KEY": os.environ["CDISC_API_KEY"]},
+)
+
+@asynccontextmanager
+async def cdisc_session():
+    """创建一个异步上下文管理器，返回已初始化的 MCP 会话。"""
+    async with stdio_client(_SERVER) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            yield session
+
+async def call(tool: str, **kwargs) -> dict:
+    async with cdisc_session() as s:
+        result = await s.call_tool(tool, arguments=kwargs)
+        return json.loads(result.content[0].text)
+
+# --- 实战演示 ---
+async def demo():
+    # 获取 SDTM 数据域
+    domains = await call("get_sdtm_domains", version="3-4")
+
+    # 获取 AE (不良事件) 域下包含的所有变量
+    variables = await call("get_sdtm_domain_variables", version="3-4", domain="AE")
+
+    # 单独查询不良事件分类术语 (AETERM) 的定义
+    aeterm = await call("get_sdtm_variable", version="3-4", domain="AE", variable="AETERM")
+
+    print(aeterm)
+
+asyncio.run(demo())
+```
+
+### 工具调用签名速查
+
+```python
+# 产品 / 版本查询
+await session.call_tool("list_products", {})
+
+# SDTM (研究数据列表模型) 相关
+await session.call_tool("get_sdtm_domains",          {"version": "3-4"})
+await session.call_tool("get_sdtm_domain_variables", {"version": "3-4", "domain": "AE"})
+await session.call_tool("get_sdtm_variable",         {"version": "3-4", "domain": "AE", "variable": "AETERM"})
+
+# ADaM (分析数据集模型) 相关
+await session.call_tool("get_adam_datastructures",   {"version": "1-3"})
+await session.call_tool("get_adam_variable",         {"version": "1-3", "data_structure": "ADSL", "variable": "USUBJID"})
+
+# CDASH (临床数据收集标准) 相关
+await session.call_tool("get_cdash_domains",         {"version": "2-0"})
+await session.call_tool("get_cdash_domain_fields",   {"version": "2-0", "domain": "AE"})
+
+# Controlled Terminology (受控术语体系) 相关
+await session.call_tool("list_ct_packages",          {})
+await session.call_tool("get_codelist",              {"package_id": "sdtmct-2024-03-29", "codelist_id": "C66781"})
+await session.call_tool("get_codelist_terms",        {"package_id": "sdtmct-2024-03-29", "codelist_id": "AGEU"})
+```
+
+> **要求：** 版本的表示必须使用连字符 (破折号) 而不是点号进行分割 — 即应为 `"3-4"` 而不可写作 `"3.4"`。
+
 ---
 
 ## 系统架构
