@@ -3,9 +3,9 @@ name: CI Tests
 
 'on':
   push:
-    branches: [main]
+    branches: [main, devel]
   pull_request:
-    branches: [main]
+    branches: [main, devel]
   workflow_dispatch:
 
 permissions:
@@ -29,4 +29,5 @@ jobs:
       - name: Run tests
         run: python -m pytest
         env:
+          # Test-only placeholder to satisfy startup config in CI.
           CDISC_API_KEY: "test-placeholder"
