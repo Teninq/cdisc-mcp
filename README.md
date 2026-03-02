@@ -387,6 +387,13 @@ ruff check src/ tests/    # Linting
 mypy src/                 # Type checking
 ```
 
+### GitHub Branch Protection (Required Checks)
+
+Configure `main` branch protection to require:
+- `CI Tests / tests`
+- `CI Lint / lint`
+- `CI Types / types`
+
 ### Project Structure
 
 ```

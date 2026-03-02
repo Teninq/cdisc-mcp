@@ -17,6 +17,42 @@ def mock_client():
     return client
 
 
+async def _get_registered_tool_names(server) -> set[str]:
+    if hasattr(server, "get_tools"):
+        tools = await server.get_tools()
+        return set(tools.keys())
+
+    if hasattr(server, "_mcp_list_tools"):
+        tools = await server._mcp_list_tools()
+        return {tool.name for tool in tools}
+
+    if hasattr(server, "_list_tools"):
+        tools = await server._list_tools()
+        return {tool.name for tool in tools}
+
+    raise AttributeError("FastMCP tool-list API not found")
+
+
+async def _invoke_tool(server, tool_name: str, **kwargs):
+    if hasattr(server, "_mcp_call_tool"):
+        _, result = await server._mcp_call_tool(tool_name, kwargs)
+        return result
+
+    if hasattr(server, "get_tools"):
+        tools = await server.get_tools()
+        return await tools[tool_name].fn(**kwargs)
+
+    if hasattr(server, "_tool_manager"):
+        tools = server._tool_manager._tools
+        return await tools[tool_name].fn(**kwargs)
+
+    if hasattr(server, "_list_tools"):
+        tools = {tool.name: tool for tool in await server._list_tools()}
+        return await tools[tool_name].fn(**kwargs)
+
+    raise AttributeError("FastMCP tool-call API not found")
+
+
 class TestCreateServer:
     """create_server() returns a configured FastMCP instance."""
 
@@ -36,7 +72,8 @@ class TestCreateServer:
 
         assert server.name == "cdisc-mcp"
 
-    def test_all_11_tools_registered(self, mock_client):
+    @pytest.mark.asyncio
+    async def test_all_11_tools_registered(self, mock_client):
         from cdisc_mcp.server import create_server
 
         server = create_server(mock_client)
@@ -55,8 +92,7 @@ class TestCreateServer:
             "get_codelist_terms",
         }
 
-        # FastMCP stores tools in a dict keyed by tool name
-        registered = set(server._tool_manager._tools.keys())
+        registered = await _get_registered_tool_names(server)
         assert expected_tools == registered
 
     def test_create_server_twice_gives_independent_instances(self, mock_client):
@@ -78,8 +114,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "products": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["list_products"].fn()
+        await _invoke_tool(server, "list_products")
 
         mock_client.get.assert_called_once_with("/mdr/products")
 
@@ -90,8 +125,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "datasets": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_sdtm_domains"].fn(version="3-4")
+        await _invoke_tool(server, "get_sdtm_domains", version="3-4")
 
         mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
 
@@ -102,8 +136,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "packages": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["list_ct_packages"].fn()
+        await _invoke_tool(server, "list_ct_packages")
 
         mock_client.get.assert_called_once_with("/mdr/ct/packages")
 
@@ -114,8 +147,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "variables": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_sdtm_domain_variables"].fn(version="3-4", domain="AE")
+        await _invoke_tool(server, "get_sdtm_domain_variables", version="3-4", domain="AE")
 
         mock_client.get.assert_called_once_with(
             "/mdr/sdtmig/3-4/datasets/AE/variables"
@@ -128,8 +160,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "name": "AETERM"}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_sdtm_variable"].fn(version="3-4", domain="AE", variable="AETERM")
+        await _invoke_tool(server, "get_sdtm_variable", version="3-4", domain="AE", variable="AETERM")
 
         mock_client.get.assert_called_once_with(
             "/mdr/sdtmig/3-4/datasets/AE/variables/AETERM"
@@ -142,8 +173,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "dataStructures": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_adam_datastructures"].fn(version="1-3")
+        await _invoke_tool(server, "get_adam_datastructures", version="1-3")
 
         mock_client.get.assert_called_once_with("/mdr/adam/adamig-1-3/datastructures")
 
@@ -154,9 +184,12 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "name": "USUBJID"}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_adam_variable"].fn(
-            version="1-3", data_structure="ADSL", variable="USUBJID"
+        await _invoke_tool(
+            server,
+            "get_adam_variable",
+            version="1-3",
+            data_structure="ADSL",
+            variable="USUBJID",
         )
 
         mock_client.get.assert_called_once_with(
@@ -170,8 +203,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "domains": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_cdash_domains"].fn(version="2-0")
+        await _invoke_tool(server, "get_cdash_domains", version="2-0")
 
         mock_client.get.assert_called_once_with("/mdr/cdashig/2-0/domains")
 
@@ -182,8 +214,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "fields": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_cdash_domain_fields"].fn(version="2-0", domain="DM")
+        await _invoke_tool(server, "get_cdash_domain_fields", version="2-0", domain="DM")
 
         mock_client.get.assert_called_once_with(
             "/mdr/cdashig/2-0/domains/DM/fields"
@@ -196,9 +227,11 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "conceptId": "C66781"}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_codelist"].fn(
-            package_id="sdtmct-2024-03-29", codelist_id="C66781"
+        await _invoke_tool(
+            server,
+            "get_codelist",
+            package_id="sdtmct-2024-03-29",
+            codelist_id="C66781",
         )
 
         mock_client.get.assert_called_once_with(
@@ -212,9 +245,11 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "terms": []}
         server = create_server(mock_client)
 
-        tools = server._tool_manager._tools
-        await tools["get_codelist_terms"].fn(
-            package_id="sdtmct-2024-03-29", codelist_id="C66781"
+        await _invoke_tool(
+            server,
+            "get_codelist_terms",
+            package_id="sdtmct-2024-03-29",
+            codelist_id="C66781",
         )
 
         mock_client.get.assert_called_once_with(
