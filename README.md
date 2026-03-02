@@ -15,7 +15,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastMCP](https://img.shields.io/badge/FastMCP-latest-FF6B35?style=flat-square)](https://github.com/jlowin/fastmcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
+![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)
 [![Tests](https://img.shields.io/badge/Coverage-80%25%2B-22C55E?style=flat-square)](tests/)
 [![API](https://img.shields.io/badge/CDISC_Library-v2_API-0EA5E9?style=flat-square)](https://library.cdisc.org)
 
@@ -419,7 +419,7 @@ tests/
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT license.
 
 ---
 
