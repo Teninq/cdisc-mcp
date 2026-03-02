@@ -7,21 +7,6 @@ from typing import Any
 from ..client import CDISCClient
 
 
-def _hal_items(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
-    """Extract a named list from HAL _links and return clean items."""
-    items = data.get("_links", {}).get(key, [])
-    return [
-        {
-            "name": item["href"].rstrip("/").split("/")[-1],
-            "title": item.get("title"),
-            "type": item.get("type"),
-            "href": item["href"],
-        }
-        for item in items
-        if isinstance(item, dict)
-    ]
-
-
 async def list_products(client: CDISCClient) -> dict[str, Any]:
     """List all available CDISC standards and their published versions.
 

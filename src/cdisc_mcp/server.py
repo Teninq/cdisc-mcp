@@ -18,6 +18,14 @@ from .tools import adam, cdash, sdtm, search, terminology
 
 logger = logging.getLogger(__name__)
 
+# All CDISC Library tools are read-only API queries.
+_TOOL_ANNOTATIONS = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": True,
+}
+
 
 def create_server(client: CDISCClient) -> FastMCP:
     """Create and configure the FastMCP server with all CDISC tools.
@@ -31,14 +39,14 @@ def create_server(client: CDISCClient) -> FastMCP:
     """
     mcp = FastMCP("cdisc-mcp")
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def list_products() -> dict[str, Any]:
         """List all available CDISC standards and their published versions.
         Use this first to discover available versions before querying specific content.
         """
         return await search.list_products(client)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_sdtm_domains(version: str) -> dict[str, Any]:
         """List all SDTM domains for a given version.
 
@@ -47,7 +55,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await sdtm.get_sdtm_domains(client, version)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_sdtm_domain_variables(version: str, domain: str) -> dict[str, Any]:
         """Get all variables defined in an SDTM domain.
 
@@ -57,7 +65,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await sdtm.get_sdtm_domain_variables(client, version, domain)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_sdtm_variable(version: str, domain: str, variable: str) -> dict[str, Any]:
         """Get the full definition of a specific SDTM variable.
 
@@ -68,7 +76,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await sdtm.get_sdtm_variable(client, version, domain, variable)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_adam_datastructures(version: str) -> dict[str, Any]:
         """List all ADaM data structures for a given version.
 
@@ -77,7 +85,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await adam.get_adam_datastructures(client, version)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_adam_variable(version: str, data_structure: str, variable: str) -> dict[str, Any]:
         """Get the definition of a specific ADaM variable.
 
@@ -88,7 +96,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await adam.get_adam_variable(client, version, data_structure, variable)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_cdash_domains(version: str) -> dict[str, Any]:
         """List all CDASH domains for a given version.
 
@@ -97,7 +105,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await cdash.get_cdash_domains(client, version)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_cdash_domain_fields(version: str, domain: str) -> dict[str, Any]:
         """Get all data collection fields for a CDASH domain.
 
@@ -107,12 +115,12 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await cdash.get_cdash_domain_fields(client, version, domain)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def list_ct_packages() -> dict[str, Any]:
         """List all available CDISC Controlled Terminology packages with release dates."""
         return await terminology.list_ct_packages(client)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_codelist(package_id: str, codelist_id: str) -> dict[str, Any]:
         """Get a specific Controlled Terminology codelist definition.
 
@@ -122,7 +130,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """
         return await terminology.get_codelist(client, package_id, codelist_id)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_TOOL_ANNOTATIONS)
     async def get_codelist_terms(package_id: str, codelist_id: str) -> dict[str, Any]:
         """List all valid terms in a CT codelist (max 100 shown, check has_more).
 

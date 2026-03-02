@@ -6,21 +6,8 @@ from typing import Any
 
 from ..client import CDISCClient
 from ..response_formatter import format_response
+from ._helpers import hal_items
 from ._validators import validate_version
-
-
-def _hal_items(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
-    """Extract a named list from HAL _links and return clean items."""
-    items = data.get("_links", {}).get(key, [])
-    return [
-        {
-            "name": item["href"].rstrip("/").split("/")[-1],
-            "title": item.get("title"),
-            "type": item.get("type"),
-        }
-        for item in items
-        if isinstance(item, dict)
-    ]
 
 
 async def get_sdtm_domains(client: CDISCClient, version: str) -> dict[str, Any]:
@@ -34,7 +21,7 @@ async def get_sdtm_domains(client: CDISCClient, version: str) -> dict[str, Any]:
     return {
         "label": data.get("label"),
         "version": data.get("version"),
-        "datasets": _hal_items(data, "datasets"),
+        "datasets": hal_items(data, "datasets"),
     }
 
 
@@ -53,7 +40,7 @@ async def get_sdtm_domain_variables(
     return {
         "domain": domain,
         "label": data.get("label"),
-        "variables": _hal_items(data, "datasetVariables"),
+        "variables": hal_items(data, "datasetVariables"),
     }
 
 
