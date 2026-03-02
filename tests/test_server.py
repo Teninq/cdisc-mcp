@@ -4,7 +4,6 @@ Tests the server factory function create_server() and verifies that all
 11 MCP tools are properly registered. Uses AsyncMock for CDISCClient.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -56,8 +55,8 @@ class TestCreateServer:
             "get_codelist_terms",
         }
 
-        # Use FastMCP public API for tool discovery
-        registered = set(asyncio.run(server.get_tools()).keys())
+        # FastMCP stores tools in a dict keyed by tool name
+        registered = set(server._tool_manager._tools.keys())
         assert expected_tools == registered
 
     def test_create_server_twice_gives_independent_instances(self, mock_client):
@@ -79,7 +78,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "products": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["list_products"].fn()
 
         mock_client.get.assert_called_once_with("/mdr/products")
@@ -91,7 +90,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "datasets": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_sdtm_domains"].fn(version="3-4")
 
         mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
@@ -103,7 +102,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "packages": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["list_ct_packages"].fn()
 
         mock_client.get.assert_called_once_with("/mdr/ct/packages")
@@ -115,7 +114,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "variables": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_sdtm_domain_variables"].fn(version="3-4", domain="AE")
 
         mock_client.get.assert_called_once_with(
@@ -129,7 +128,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "name": "AETERM"}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_sdtm_variable"].fn(version="3-4", domain="AE", variable="AETERM")
 
         mock_client.get.assert_called_once_with(
@@ -143,7 +142,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "dataStructures": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_adam_datastructures"].fn(version="1-3")
 
         mock_client.get.assert_called_once_with("/mdr/adam/adamig-1-3/datastructures")
@@ -155,7 +154,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "name": "USUBJID"}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_adam_variable"].fn(
             version="1-3", data_structure="ADSL", variable="USUBJID"
         )
@@ -171,7 +170,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "domains": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_cdash_domains"].fn(version="2-0")
 
         mock_client.get.assert_called_once_with("/mdr/cdashig/2-0/domains")
@@ -183,7 +182,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "fields": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_cdash_domain_fields"].fn(version="2-0", domain="DM")
 
         mock_client.get.assert_called_once_with(
@@ -197,7 +196,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "conceptId": "C66781"}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_codelist"].fn(
             package_id="sdtmct-2024-03-29", codelist_id="C66781"
         )
@@ -213,7 +212,7 @@ class TestServerToolCallsClient:
         mock_client.get.return_value = {"_links": {}, "terms": []}
         server = create_server(mock_client)
 
-        tools = await server.get_tools()
+        tools = server._tool_manager._tools
         await tools["get_codelist_terms"].fn(
             package_id="sdtmct-2024-03-29", codelist_id="C66781"
         )
