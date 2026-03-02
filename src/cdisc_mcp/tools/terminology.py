@@ -6,26 +6,14 @@ from typing import Any
 
 from ..client import CDISCClient
 from ..response_formatter import format_response
-
-
-def _hal_items(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
-    """Extract a named list from HAL _links and return clean items."""
-    items = data.get("_links", {}).get(key, [])
-    return [
-        {
-            "name": item["href"].rstrip("/").split("/")[-1],
-            "title": item.get("title"),
-            "type": item.get("type"),
-        }
-        for item in items
-        if isinstance(item, dict)
-    ]
+from ._helpers import hal_items
+from ._validators import validate_version
 
 
 async def list_ct_packages(client: CDISCClient) -> dict[str, Any]:
     """List all available CDISC Controlled Terminology packages."""
     data = await client.get("/mdr/ct/packages")
-    packages = _hal_items(data, "packages")
+    packages = hal_items(data, "packages")
     return {"packages": packages, "count": len(packages)}
 
 
@@ -38,6 +26,8 @@ async def get_codelist(
         package_id: CT package identifier, e.g. "sdtmct-2024-09-27".
         codelist_id: Codelist concept ID, e.g. "C66781" or "AGEU".
     """
+    package_id = validate_version(package_id, param_name="package_id")
+    codelist_id = validate_version(codelist_id, param_name="codelist_id")
     data = await client.get(
         f"/mdr/ct/packages/{package_id}/codelists/{codelist_id}"
     )
@@ -53,10 +43,12 @@ async def get_codelist_terms(
         package_id: CT package identifier.
         codelist_id: Codelist concept ID or submission value.
     """
+    package_id = validate_version(package_id, param_name="package_id")
+    codelist_id = validate_version(codelist_id, param_name="codelist_id")
     data = await client.get(
         f"/mdr/ct/packages/{package_id}/codelists/{codelist_id}/terms"
     )
-    terms = _hal_items(data, "terms")
+    terms = hal_items(data, "terms")
     return {
         "codelist": codelist_id,
         "package": package_id,

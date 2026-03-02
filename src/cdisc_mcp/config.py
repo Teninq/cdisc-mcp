@@ -59,16 +59,3 @@ def load_config() -> Config:
     return Config(api_key=api_key)
 
 
-def get_api_key() -> str:
-    """Return the CDISC API key from the environment.
-
-    Raises:
-        EnvironmentError: if CDISC_API_KEY is missing or blank.
-    """
-    api_key = os.getenv("CDISC_API_KEY", "").strip()
-    if not api_key:
-        raise OSError(
-            "CDISC_API_KEY environment variable is required. "
-            "Set it to your CDISC Library personal API key."
-        )
-    return api_key
