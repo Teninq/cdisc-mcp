@@ -48,3 +48,6 @@ CLAUDE.md
 
 # Playwright MCP output
 .playwright-mcp/
+
+# Local git worktrees
+.worktrees/
