@@ -367,6 +367,8 @@ MCP Client (Claude / VS Code / Cursor)
 
 ## Development
 
+**Development workflow (devel-first, branch & merge SOP):** See [Contributing Guide](docs/CONTRIBUTING.md).
+
 ### Running Tests
 
 ```bash
