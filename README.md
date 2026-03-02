@@ -37,7 +37,7 @@ The **CDISC MCP Server** connects AI assistants (Claude, VS Code Copilot, Cursor
 > *"Show me the ADSL variables in ADaM IG 1.3"*
 > *"List all available Controlled Terminology packages"*
 
-For full setup instructions, see the **[User Manual →](docs/user-manual.md)**
+For full setup instructions, see the **[User Manual →](docs/user-manual.md)**. See **[Examples →](docs/examples.md)** for real conversation samples.
 
 ---
 
@@ -436,6 +436,6 @@ MIT license.
 
 Built for clinical data professionals working with CDISC standards.
 
-**[User Manual](docs/user-manual.md)** · **[CDISC Library](https://library.cdisc.org)** · **[API Docs](https://www.cdisc.org/cdisc-library/api-documentation)**
+**[User Manual](docs/user-manual.md)** · **[Examples](docs/examples.md)** · **[CDISC Library](https://library.cdisc.org)** · **[API Docs](https://www.cdisc.org/cdisc-library/api-documentation)**
 
 </div>
