@@ -7,16 +7,16 @@ from typing import Any
 from ..client import CDISCClient
 from ..response_formatter import format_response
 from ._helpers import hal_items
-from ._validators import validate_version
+from ._validators import normalize_version_for_path, validate_version
 
 
 async def get_sdtm_domains(client: CDISCClient, version: str) -> dict[str, Any]:
     """List all SDTM datasets for a given version.
 
     Args:
-        version: SDTM-IG version using dashes, e.g. "3-4", "3-3".
+        version: SDTM-IG version, e.g. "3.4" or "3-4".
     """
-    version = validate_version(version)
+    version = normalize_version_for_path(validate_version(version))
     data = await client.get(f"/mdr/sdtmig/{version}/datasets")
     return {
         "label": data.get("label"),
@@ -31,10 +31,10 @@ async def get_sdtm_domain_variables(
     """Get all variables defined for an SDTM domain.
 
     Args:
-        version: SDTM-IG version using dashes, e.g. "3-4".
+        version: SDTM-IG version, e.g. "3.4" or "3-4".
         domain: Two-letter domain code, e.g. "DM", "AE", "LB".
     """
-    version = validate_version(version)
+    version = normalize_version_for_path(validate_version(version))
     domain = domain.upper().strip()
     data = await client.get(f"/mdr/sdtmig/{version}/datasets/{domain}/variables")
     return {
@@ -50,11 +50,11 @@ async def get_sdtm_variable(
     """Get the full definition of a specific SDTM variable.
 
     Args:
-        version: SDTM-IG version using dashes, e.g. "3-4".
+        version: SDTM-IG version, e.g. "3.4" or "3-4".
         domain: Two-letter domain code, e.g. "AE".
         variable: Variable name, e.g. "AETERM", "AEDECOD".
     """
-    version = validate_version(version)
+    version = normalize_version_for_path(validate_version(version))
     domain = domain.upper().strip()
     variable = variable.upper().strip()
     data = await client.get(

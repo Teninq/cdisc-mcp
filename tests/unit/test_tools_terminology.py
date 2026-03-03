@@ -79,6 +79,17 @@ class TestGetCodelist:
         )
 
     @pytest.mark.asyncio
+    async def test_submission_value_kept_unchanged(self, mock_client):
+        from cdisc_mcp.tools.terminology import get_codelist
+
+        mock_client.get.return_value = {"conceptId": "C66781", "submissionValue": "AGEU"}
+        await get_codelist(mock_client, package_id="sdtmct-2024-03-29", codelist_id="AGEU")
+
+        mock_client.get.assert_called_once_with(
+            "/mdr/ct/packages/sdtmct-2024-03-29/codelists/AGEU"
+        )
+
+    @pytest.mark.asyncio
     async def test_returns_formatted_response(self, mock_client, sample_codelist):
         from cdisc_mcp.tools.terminology import get_codelist
 

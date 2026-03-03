@@ -40,6 +40,15 @@ class TestGetSdtmDomains:
         mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
 
     @pytest.mark.asyncio
+    async def test_dotted_version_is_normalized(self, mock_client):
+        from cdisc_mcp.tools.sdtm import get_sdtm_domains
+
+        mock_client.get.return_value = {"datasets": [], "_links": {}}
+        await get_sdtm_domains(mock_client, version="3.4")
+
+        mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
+
+    @pytest.mark.asyncio
     async def test_raises_for_empty_version(self, mock_client):
         from cdisc_mcp.tools.sdtm import get_sdtm_domains
 

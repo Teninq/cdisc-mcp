@@ -51,7 +51,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """List all SDTM domains for a given version.
 
         Args:
-            version: SDTM-IG version, e.g. "3.4", "3.3". Use list_products() first.
+            version: SDTM-IG version, e.g. "3.4" or "3-4". Use list_products() first.
         """
         return await sdtm.get_sdtm_domains(client, version)
 
@@ -60,7 +60,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """Get all variables defined in an SDTM domain.
 
         Args:
-            version: SDTM-IG version, e.g. "3.4"
+            version: SDTM-IG version, e.g. "3.4" or "3-4"
             domain: Two-letter domain code, e.g. "DM", "AE", "LB"
         """
         return await sdtm.get_sdtm_domain_variables(client, version, domain)
@@ -70,7 +70,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """Get the full definition of a specific SDTM variable.
 
         Args:
-            version: SDTM-IG version, e.g. "3.4"
+            version: SDTM-IG version, e.g. "3.4" or "3-4"
             domain: Domain code, e.g. "AE"
             variable: Variable name, e.g. "AETERM", "AEDECOD"
         """
@@ -81,7 +81,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """List all ADaM data structures for a given version.
 
         Args:
-            version: ADaM version, e.g. "1.3", "2.1"
+            version: ADaM version, e.g. "1.3" or "1-3", "2.1" or "2-1"
         """
         return await adam.get_adam_datastructures(client, version)
 
@@ -90,7 +90,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """Get the definition of a specific ADaM variable.
 
         Args:
-            version: ADaM version, e.g. "1.3"
+            version: ADaM version, e.g. "1.3" or "1-3"
             data_structure: Data structure name, e.g. "ADSL", "ADAE"
             variable: Variable name, e.g. "USUBJID", "AVAL"
         """
@@ -101,7 +101,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """List all CDASH domains for a given version.
 
         Args:
-            version: CDASH version, e.g. "2.0", "1.1"
+            version: CDASH version, e.g. "2.0" or "2-0", "1.1" or "1-1"
         """
         return await cdash.get_cdash_domains(client, version)
 
@@ -110,7 +110,7 @@ def create_server(client: CDISCClient) -> FastMCP:
         """Get all data collection fields for a CDASH domain.
 
         Args:
-            version: CDASH version, e.g. "2.0"
+            version: CDASH version, e.g. "2.0" or "2-0"
             domain: Domain code, e.g. "DM", "AE", "VS"
         """
         return await cdash.get_cdash_domain_fields(client, version, domain)
