@@ -6,16 +6,16 @@ from typing import Any
 
 from ..client import CDISCClient
 from ._helpers import hal_items
-from ._validators import validate_version
+from ._validators import normalize_version_for_path, validate_version
 
 
 async def get_cdash_domains(client: CDISCClient, version: str) -> dict[str, Any]:
     """List all CDASH domains for a given version.
 
     Args:
-        version: CDASH IG version using dashes, e.g. "2-0", "2-1", "1-1-1".
+        version: CDASH IG version, e.g. "2.0" or "2-0", "2.1" or "2-1".
     """
-    version = validate_version(version)
+    version = normalize_version_for_path(validate_version(version))
     data = await client.get(f"/mdr/cdashig/{version}/domains")
     return {
         "label": data.get("label"),
@@ -30,10 +30,10 @@ async def get_cdash_domain_fields(
     """Get all data collection fields for a CDASH domain.
 
     Args:
-        version: CDASH IG version using dashes, e.g. "2-0".
+        version: CDASH IG version, e.g. "2.0" or "2-0".
         domain: Domain code, e.g. "DM", "AE", "VS".
     """
-    version = validate_version(version)
+    version = normalize_version_for_path(validate_version(version))
     domain = domain.upper().strip()
     data = await client.get(f"/mdr/cdashig/{version}/domains/{domain}/fields")
     return {

@@ -50,6 +50,11 @@ class TestGetSdtmDomains:
         call_path = mock_client.get.call_args[0][0]
         assert "3-4" in call_path
 
+    async def test_dotted_version_normalized_to_dashed(self, mock_client: MagicMock) -> None:
+        mock_client.get.return_value = {"_links": {"datasets": []}}
+        await get_sdtm_domains(mock_client, version="3.4")
+        mock_client.get.assert_called_once_with("/mdr/sdtmig/3-4/datasets")
+
     async def test_uses_sdtmig_endpoint(self, mock_client: MagicMock) -> None:
         mock_client.get.return_value = {"_links": {"datasets": []}}
         await get_sdtm_domains(mock_client, version="3-4")
@@ -149,6 +154,11 @@ class TestAdam:
         call_path = mock_client.get.call_args[0][0]
         assert "1-3" in call_path
 
+    async def test_dotted_version_normalized_to_dashed(self, mock_client: MagicMock) -> None:
+        mock_client.get.return_value = {"_links": {"dataStructures": []}}
+        await get_adam_datastructures(mock_client, version="1.3")
+        mock_client.get.assert_called_once_with("/mdr/adam/adamig-1-3/datastructures")
+
     async def test_uses_adamig_endpoint(self, mock_client: MagicMock) -> None:
         mock_client.get.return_value = {"_links": {"dataStructures": []}}
         await get_adam_datastructures(mock_client, version="1-3")
@@ -176,6 +186,11 @@ class TestCdash:
         await get_cdash_domains(mock_client, version="2-0")
         call_path = mock_client.get.call_args[0][0]
         assert "2-0" in call_path
+
+    async def test_dotted_version_normalized_to_dashed(self, mock_client: MagicMock) -> None:
+        mock_client.get.return_value = {"_links": {"domains": []}}
+        await get_cdash_domains(mock_client, version="2.0")
+        mock_client.get.assert_called_once_with("/mdr/cdashig/2-0/domains")
 
     async def test_uses_cdashig_endpoint(self, mock_client: MagicMock) -> None:
         mock_client.get.return_value = {"_links": {"domains": []}}

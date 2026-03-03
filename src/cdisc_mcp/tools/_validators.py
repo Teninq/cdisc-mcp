@@ -1,6 +1,16 @@
 """Input validators for MCP tool parameters."""
 
 
+def normalize_version_for_path(version: str) -> str:
+    """Normalize dotted version strings to dashed path format.
+
+    Examples:
+        "3.4" -> "3-4"
+        "1-3" -> "1-3"
+    """
+    return version.replace(".", "-")
+
+
 def validate_version(version: str, param_name: str = "version") -> str:
     """Validate and return a safe version string.
 
