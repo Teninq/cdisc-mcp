@@ -43,6 +43,18 @@ For full setup instructions, see the **[User Manual →](docs/user-manual.md)**.
 
 ## Quick Start
 
+### 0 · One-Line AI Install
+
+Have an AI assistant install everything for you:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Teninq/cdisc-mcp/main/install.md
+```
+
+> Paste the output into Claude, Copilot, or any AI chat — it will read the guide and walk you through the full setup interactively.
+
+---
+
 ### 1 · Get a CDISC Library API Key
 
 Register at **https://library.cdisc.org** and obtain a personal API key.
